@@ -1,146 +1,152 @@
-# 🔍 Intelligent Autocorrect Keyboard System
+# 🔍 Autocorrect + Next-Word Prediction Keyboard System
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Tkinter](https://img.shields.io/badge/GUI-Tkinter-green)
-![PySpellChecker](https://img.shields.io/badge/Library-PySpellChecker-orange)
+![NLTK](https://img.shields.io/badge/NLP-NLTK-orange)
+![PySpellChecker](https://img.shields.io/badge/SpellCheck-PySpellChecker-red)
+
+---
 
 ## 📌 Project Overview
 
-The **Intelligent Autocorrect Keyboard System** is a desktop-based spell checking and autocorrection application developed using **Python**, **Tkinter**, and **PySpellChecker**.
+The **Autocorrect + Next-Word Prediction Keyboard System** is a desktop application that combines intelligent spell correction with context-based next-word prediction.
 
-The system automatically detects misspelled words, suggests corrections, preserves punctuation and capitalization, and provides an interactive graphical user interface for improving text quality.
+The system automatically corrects misspelled words, suggests alternative corrections, and predicts the next word using statistical **N-gram language models** trained on NLTK corpora.
 
-This project was developed as part of the **Shadow Fox Virtual Internship Program (Beginner Level)**.
+This project was developed as part of the **Shadow Fox Virtual Internship Program (Intermediate Level)**.
 
 ---
 
 ## ✨ Features
 
-### ✅ Spell Checking
+### 1. Spell Checking & Autocorrection
 
-* Detects misspelled words in real-time
-* Supports sentence-level correction
+* Detects misspelled words using PySpellChecker
+* Automatically suggests the most probable correction
+* Preserves capitalization patterns
+* Preserves punctuation around corrected words
+* Displays alternative spelling suggestions
 
-### ✅ Intelligent Auto-Correction
+### 2. Next-Word Prediction
 
-* Automatically replaces misspelled words with the most probable correction
-* Uses the PySpellChecker library for word correction
+* Implements Bigram, Trigram, and Quadgram language models
+* Trained using Reuters and Brown corpora from NLTK
+* Uses contextual information from previous words
+* Displays prediction probabilities
+* Provides up to 5 next-word suggestions
 
-### ✅ Suggestions Panel
+### 3. Interactive GUI
 
-* Displays up to 5 alternative spelling suggestions
-* Allows users to choose alternative corrections
+* Real-time text input and correction
+* Spelling suggestions panel
+* Next-word prediction buttons
+* Statistics dashboard
+* Copy and clear functionality
 
-### ✅ Capitalization Preservation
+### 4. Additional Features
 
-Maintains the original writing style:
-
-* `hello` → `hello`
-* `Hello` → `Hello`
-* `HELLO` → `HELLO`
-
-### ✅ Punctuation Preservation
-
-Examples:
-
-* `helo!` → `hello!`
-* `(helo)` → `(hello)`
-* `"helo"` → `"hello"`
-
-### ✅ Interactive GUI
-
-* Modern Tkinter-based user interface
-* Easy-to-use correction workflow
-
-### ✅ Statistics Dashboard
-
-Displays:
-
-* Total Words
-* Misspelled Words
-* Corrections Applied
-* Text Quality Score
-* Last Correction Time
-
-### ✅ Additional Features
-
-* Copy corrected output to clipboard
-* Clear all text instantly
 * Double-click suggestion replacement
+* Keyboard shortcuts
+* Text quality analysis
+* Real-time prediction updates
 
 ---
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut   | Action           |
-| ---------- | ---------------- |
-| `Ctrl + R` | Correct Sentence |
-| `Ctrl + L` | Clear All Text   |
-| `Ctrl + C` | Copy Output      |
+| Shortcut | Action           |
+| -------- | ---------------- |
+| Ctrl + R | Correct Sentence |
+| Ctrl + L | Clear All Text   |
+| Ctrl + C | Copy Output      |
 
 ---
 
 ## 🛠️ Technologies Used
 
-| Technology                  | Purpose                   |
-| --------------------------- | ------------------------- |
-| Python                      | Core Programming Language |
-| Tkinter                     | Graphical User Interface  |
-| PySpellChecker              | Spell Correction Engine   |
-| Regular Expressions (Regex) | Text Processing           |
+| Technology          | Purpose                               |
+| ------------------- | ------------------------------------- |
+| Python 3.x          | Core Programming Language             |
+| Tkinter             | Graphical User Interface              |
+| PySpellChecker      | Spell Checking and Correction         |
+| NLTK                | Corpus Processing and N-Gram Training |
+| Reuters Corpus      | Language Model Training               |
+| Brown Corpus        | Language Model Training               |
+| Regular Expressions | Text Processing                       |
 
 ---
 
 ## 📂 Project Structure
 
 ```text
-Auto correct keyboard system/
+AutoCorrect-NextWord-Predictor/
 │
-├── logic.py          # Core correction engine
-├── ui.py             # Tkinter GUI application
-└── requirements.txt  # Dependencies (pyspellchecker)
+├── autocorrect_core.py
+├── ngram_predictor.py
+├── ui.py
+├── requirements.txt
+└── screenshots/
 ```
 
 ---
 
 ## ⚙️ Installation
 
-1. Download or clone the project files.
-
-2. Install the required dependency:
+### Install Dependencies
 
 ```bash
-pip install pyspellchecker
+pip install pyspellchecker nltk
 ```
 
-3. Run the application:
+### Run the Application
 
 ```bash
 python ui.py
 ```
 
+**Note:** During the first execution, NLTK resources (Reuters and Brown corpora) will be downloaded automatically if not already available.
+
 ---
 
 ## 🚀 How to Use
 
+### Spell Correction
+
 1. Enter text containing spelling mistakes.
-2. Click **Correct Sentence** or press `Ctrl + R`.
-3. View the corrected output.
-4. Review suggested alternatives in the Suggestions Panel.
+2. Click **Correct Sentence** or press **Ctrl + R**.
+3. View corrected output.
+4. Review spelling suggestions.
 5. Double-click any suggestion to replace a word.
-6. Copy the corrected text using **Copy Output** or `Ctrl + C`.
+
+### Next-Word Prediction
+
+1. Begin typing a sentence.
+2. Prediction buttons automatically update based on context.
+3. View prediction probabilities.
+4. Click a prediction button to insert the suggested word.
 
 ---
 
 ## 🧪 Test Cases
 
-| Input                | Expected Output       |
-| -------------------- | --------------------- |
-| `helo world`         | `hello world`         |
-| `how are yuo`        | `how are you`         |
-| `I lvoe python`      | `I love python`       |
-| `This is a tset`     | `This is a test`      |
-| `Helo, how are yuo?` | `Hello, how are you?` |
+### Basic Autocorrection
+
+| Input              | Expected Output    |
+| ------------------ | ------------------ |
+| helo world         | hello world        |
+| how are yuo        | how are you        |
+| I lvoe python      | I love python      |
+| This is a tset     | This is a test     |
+| recieve my messege | receive my message |
+
+### Punctuation & Capitalization
+
+| Input  | Expected Output |
+| ------ | --------------- |
+| Helo!  | Hello!          |
+| (helo) | (hello)         |
+| "helo" | "hello"         |
+| HELO   | HELLO           |
 
 ### Paragraph Test
 
@@ -158,20 +164,35 @@ Hello how are you? I am learning python programming and its really fun.
 
 ---
 
+## 📊 N-Gram Prediction Methodology
+
+The system uses statistical language models to predict the next word based on context.
+
+| Model    | Context Used     |
+| -------- | ---------------- |
+| Bigram   | Previous 1 word  |
+| Trigram  | Previous 2 words |
+| Quadgram | Previous 3 words |
+
+Prediction probabilities are calculated from word sequence frequencies learned from the training corpora.
+
+---
+
 ## 📸 Screenshots
 
 ### Main Application Interface
 
 ![Main Application](screenshots/main.png)
 
-### Test Case 1
+### Testcase
 
-![Statistics Dashboard](screenshots/Test-Case.png)
+![Testcase](screenshots/Test-Case.png)
+
+### Testcase
+
+![Testcase](screenshots/Test-Case1.png)
 
 
 ---
-
-
-
 
 

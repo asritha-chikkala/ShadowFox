@@ -80,38 +80,18 @@ class AutocorrectEngine:
     
     def get_suggestions(self, word, correction=None, top_n=5):
         clean_word = word.lower().strip(".,!?;:\"'()")
-        word_len = len(clean_word)
-        
         suggestions = self.spell.candidates(clean_word)
         
         if suggestions:
             suggestions = list(suggestions)
             
-            # Filter by length: word_len-1, word_len, word_len+1
-            filtered_suggestions = [
-                s for s in suggestions 
-                if len(s) in [word_len - 1, word_len, word_len + 1]
-            ]
-            
-            # If filtered results are too few, include all suggestions
-            if len(filtered_suggestions) < top_n:
-                filtered_suggestions = suggestions
-            
             if correction is None:
                 correction = self.spell.correction(clean_word)
             
-            if correction and correction != clean_word and correction in filtered_suggestions:
-                filtered_suggestions.remove(correction)
-                filtered_suggestions.insert(0, correction)
-            elif correction and correction != clean_word:
-                filtered_suggestions.insert(0, correction)
+            if correction and correction != clean_word and correction in suggestions:
+                suggestions.remove(correction)
+                suggestions.insert(0, correction)
             
-            # Remove duplicates and limit to top_n
-            unique_suggestions = []
-            for s in filtered_suggestions:
-                if s not in unique_suggestions:
-                    unique_suggestions.append(s)
-            
-            return unique_suggestions[:top_n]
+            return suggestions[:top_n]
         
         return []

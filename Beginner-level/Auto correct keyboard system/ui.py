@@ -1,27 +1,30 @@
 import tkinter as tk
 from tkinter import scrolledtext, messagebox, font
-from logic import AutocorrectEngine
+from autocorrect_core import AutocorrectEngine
+from ngram_predictor import NextWordPredictor
 from datetime import datetime
 import re
 
 class AutocorrectApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Shadow Fox - Autocorrect Keyboard System")
-        self.root.geometry("950x700")
+        self.root.title("Shadow Fox - Autocorrect + Next-Word Prediction System")
+        self.root.geometry("1200x700")
         self.root.configure(bg="#f0f0f0")
         
         self.custom_font = font.Font(family="Segoe UI", size=11)
         self.engine = AutocorrectEngine()
+        self.predictor = NextWordPredictor()
         
         self.setup_ui()
+        self.setup_prediction_bindings()
     
     def setup_ui(self):
         title_frame = tk.Frame(self.root, bg="#2c3e50", height=60)
         title_frame.pack(fill=tk.X)
         title_frame.pack_propagate(False)
         
-        title_label = tk.Label(title_frame, text="🔍 Autocorrect Keyboard System", 
+        title_label = tk.Label(title_frame, text="Autocorrect + Next-Word Prediction Keyboard System", 
                                font=("Segoe UI", 16, "bold"), 
                                fg="white", bg="#2c3e50")
         title_label.pack(pady=15)
@@ -30,18 +33,21 @@ class AutocorrectApp:
         main_paned.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         left_frame = tk.Frame(main_paned, bg="#f0f0f0")
-        main_paned.add(left_frame, width=500)
+        main_paned.add(left_frame, width=450)
         
         right_paned = tk.PanedWindow(main_paned, orient=tk.VERTICAL, bg="#ecf0f1")
         main_paned.add(right_paned, width=350)
         
-        input_label = tk.Label(left_frame, text="📝 Enter your text (with typos):", 
+        far_right_paned = tk.PanedWindow(main_paned, orient=tk.VERTICAL, bg="#ecf0f1")
+        main_paned.add(far_right_paned, width=300)
+        
+        input_label = tk.Label(left_frame, text="Enter your text (with typos):", 
                                font=("Segoe UI", 12, "bold"), 
                                bg="#f0f0f0", fg="#333333")
         input_label.pack(anchor=tk.W, pady=(0, 5))
         
-        self.input_text = scrolledtext.ScrolledText(left_frame, height=8, 
-                                                     width=55, 
+        self.input_text = scrolledtext.ScrolledText(left_frame, height=10, 
+                                                     width=50, 
                                                      font=self.custom_font,
                                                      wrap=tk.WORD,
                                                      relief=tk.GROOVE,
@@ -51,40 +57,40 @@ class AutocorrectApp:
         button_frame = tk.Frame(left_frame, bg="#f0f0f0")
         button_frame.pack(pady=(0, 15))
         
-        self.correct_btn = tk.Button(button_frame, text="✅ Correct Sentence", 
+        self.correct_btn = tk.Button(button_frame, text="Correct Sentence", 
                                      command=self.correct, 
                                      bg="#27ae60", fg="white", 
                                      font=("Segoe UI", 11, "bold"),
-                                     padx=20, pady=8,
+                                     padx=15, pady=8,
                                      relief=tk.RAISED,
                                      cursor="hand2")
         self.correct_btn.pack(side=tk.LEFT, padx=5)
         
-        self.clear_btn = tk.Button(button_frame, text="🗑 Clear All", 
+        self.clear_btn = tk.Button(button_frame, text="Clear All", 
                                    command=self.clear, 
                                    bg="#e74c3c", fg="white", 
                                    font=("Segoe UI", 11, "bold"),
-                                   padx=20, pady=8,
+                                   padx=15, pady=8,
                                    relief=tk.RAISED,
                                    cursor="hand2")
         self.clear_btn.pack(side=tk.LEFT, padx=5)
         
-        self.copy_btn = tk.Button(button_frame, text="📋 Copy Output", 
+        self.copy_btn = tk.Button(button_frame, text="Copy Output", 
                                   command=self.copy_output, 
                                   bg="#3498db", fg="white", 
                                   font=("Segoe UI", 11, "bold"),
-                                  padx=20, pady=8,
+                                  padx=15, pady=8,
                                   relief=tk.RAISED,
                                   cursor="hand2")
         self.copy_btn.pack(side=tk.LEFT, padx=5)
         
-        output_label = tk.Label(left_frame, text="✨ Corrected output:", 
+        output_label = tk.Label(left_frame, text="Corrected output:", 
                                 font=("Segoe UI", 12, "bold"), 
                                 bg="#f0f0f0", fg="#333333")
         output_label.pack(anchor=tk.W, pady=(0, 5))
         
-        self.output_text = scrolledtext.ScrolledText(left_frame, height=8, 
-                                                      width=55, 
+        self.output_text = scrolledtext.ScrolledText(left_frame, height=10, 
+                                                      width=50, 
                                                       font=self.custom_font,
                                                       wrap=tk.WORD,
                                                       relief=tk.GROOVE,
@@ -93,9 +99,9 @@ class AutocorrectApp:
         self.output_text.pack(fill=tk.BOTH, expand=True)
         
         suggestions_frame = tk.Frame(right_paned, bg="#ecf0f1")
-        right_paned.add(suggestions_frame, height=400)
+        right_paned.add(suggestions_frame, height=350)
         
-        suggestions_title = tk.Label(suggestions_frame, text="💡 Spelling Suggestions", 
+        suggestions_title = tk.Label(suggestions_frame, text="Spelling Suggestions", 
                                      font=("Segoe UI", 12, "bold"), 
                                      bg="#34495e", fg="white", 
                                      pady=10)
@@ -110,7 +116,7 @@ class AutocorrectApp:
                                                selectmode=tk.SINGLE,
                                                relief=tk.GROOVE,
                                                borderwidth=1,
-                                               height=15)
+                                               height=12)
         self.suggestions_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         suggestions_scrollbar = tk.Scrollbar(suggestions_listbox_frame, orient=tk.VERTICAL, 
@@ -125,10 +131,36 @@ class AutocorrectApp:
                                             bg="#ecf0f1", fg="#7f8c8d", pady=5)
         self.selected_word_label.pack(fill=tk.X)
         
-        stats_frame = tk.Frame(right_paned, bg="#ecf0f1", relief=tk.RAISED, borderwidth=1)
-        right_paned.add(stats_frame, height=180)
+        prediction_frame = tk.Frame(right_paned, bg="#ecf0f1")
+        right_paned.add(prediction_frame, height=250)
         
-        stats_title = tk.Label(stats_frame, text="📊 Statistics", 
+        prediction_title = tk.Label(prediction_frame, text="Next-Word Predictions", 
+                                    font=("Segoe UI", 12, "bold"), 
+                                    bg="#16a085", fg="white", 
+                                    pady=10)
+        prediction_title.pack(fill=tk.X)
+        
+        prediction_buttons_frame = tk.Frame(prediction_frame, bg="#ecf0f1", padx=15, pady=15)
+        prediction_buttons_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.prediction_buttons = []
+        for i in range(5):
+            btn = tk.Button(prediction_buttons_frame, text="", 
+                           command=lambda idx=i: self.insert_prediction(idx),
+                           bg="#ecf0f1", fg="#95a5a6",
+                           font=("Segoe UI", 10),
+                           relief=tk.GROOVE, borderwidth=1,
+                           cursor="hand2", pady=8,
+                           state=tk.DISABLED)
+            btn.pack(fill=tk.X, pady=3)
+            self.prediction_buttons.append(btn)
+        
+        self.current_predictions = []
+        
+        stats_frame = tk.Frame(far_right_paned, bg="#ecf0f1", relief=tk.RAISED, borderwidth=1)
+        far_right_paned.add(stats_frame, height=300)
+        
+        stats_title = tk.Label(stats_frame, text="Statistics", 
                                font=("Segoe UI", 12, "bold"), 
                                bg="#2c3e50", fg="white", 
                                pady=8)
@@ -139,11 +171,11 @@ class AutocorrectApp:
         
         self.stats_labels = {}
         stats_items = [
-            ("📝 Total words:", "0"),
-            ("❌ Misspelled words:", "0"),
-            ("✅ Corrections applied:", "0"),
-            ("📈 Text quality:", "0%"),
-            ("⏱ Last corrected:", "Never")
+            ("Total words:", "0"),
+            ("Misspelled words:", "0"),
+            ("Corrections applied:", "0"),
+            ("Text quality:", "0%"),
+            ("Last corrected:", "Never")
         ]
         
         for label, value in stats_items:
@@ -153,7 +185,28 @@ class AutocorrectApp:
             self.stats_labels[label] = tk.Label(frame, text=value, font=("Segoe UI", 10, "bold"), bg="#ecf0f1", fg="#2c3e50")
             self.stats_labels[label].pack(side=tk.RIGHT)
         
+        info_frame = tk.Frame(far_right_paned, bg="#ecf0f1", relief=tk.GROOVE, borderwidth=1)
+        far_right_paned.add(info_frame, height=250)
+        
+        info_title = tk.Label(info_frame, text="How to Use", 
+                              font=("Segoe UI", 12, "bold"), 
+                              bg="#8e44ad", fg="white", 
+                              pady=8)
+        info_title.pack(fill=tk.X)
+        
+        info_text = tk.Label(info_frame, text=""" 
+- Type a sentence
+- Click 'Correct Sentence' to fix spelling
+- Double-click suggestions to replace words
+- Click prediction buttons to insert words
+- Press Ctrl+R for quick correction
+- Press Ctrl+L to clear all
+- Press Ctrl+C to copy output
+                        """, font=("Segoe UI", 9), bg="#ecf0f1", fg="#555555", justify=tk.LEFT, pady=10)
+        info_text.pack(fill=tk.BOTH, expand=True)
+        
         self.current_suggestions = {}
+        self.suggestion_map = {}
         self.status_bar = tk.Label(self.root, text="Ready", bd=1, relief=tk.SUNKEN, anchor=tk.W,
                                     font=("Segoe UI", 9), bg="#ecf0f1", fg="#7f8c8d")
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -162,16 +215,60 @@ class AutocorrectApp:
         self.root.bind('<Control-l>', lambda e: self.clear())
         self.root.bind('<Control-r>', lambda e: self.correct())
     
+    def setup_prediction_bindings(self):
+        self.input_text.bind('<KeyRelease>', self.on_text_change)
+    
+    def on_text_change(self, event=None):
+        text = self.input_text.get("1.0", tk.END).strip()
+        if text:
+            predictions = self.predictor.predict_next(text, top_n=5)
+            self.current_predictions = predictions
+            for i, btn in enumerate(self.prediction_buttons):
+                if i < len(predictions):
+                    word, prob = predictions[i]
+                    btn.config(
+                        text=f"{word} ({prob:.1f}%)",
+                        bg="#ffffff",
+                        fg="#2c3e50",
+                        state=tk.NORMAL
+                    )
+                else:
+                    btn.config(
+                        text="",
+                        bg="#ecf0f1",
+                        fg="#95a5a6",
+                        state=tk.DISABLED
+                    )
+        else:
+            for btn in self.prediction_buttons:
+                btn.config(
+                    text="",
+                    bg="#ecf0f1",
+                    fg="#95a5a6",
+                    state=tk.DISABLED
+                )
+    
+    def insert_prediction(self, index):
+        if index < len(self.current_predictions):
+            word, prob = self.current_predictions[index]
+            current_text = self.input_text.get("1.0", tk.END).strip()
+            new_text = (current_text + " " + word).strip()
+            self.input_text.delete("1.0", tk.END)
+            self.input_text.insert("1.0", new_text)
+            self.status_bar.config(text=f"Added '{word}'", fg="#27ae60")
+            self.root.after(2000, lambda: self.status_bar.config(text="Ready", fg="#7f8c8d"))
+            self.on_text_change()
+    
     def update_statistics(self, total_words, misspellings):
         text_quality = ((total_words - misspellings) / total_words * 100) if total_words > 0 else 100
-        self.stats_labels["📝 Total words:"].config(text=str(total_words))
-        self.stats_labels["❌ Misspelled words:"].config(text=str(misspellings))
-        self.stats_labels["✅ Corrections applied:"].config(text=str(misspellings))
-        self.stats_labels["📈 Text quality:"].config(text=f"{text_quality:.1f}%")
-        self.stats_labels["⏱ Last corrected:"].config(text=datetime.now().strftime("%H:%M:%S"))
+        self.stats_labels["Total words:"].config(text=str(total_words))
+        self.stats_labels["Misspelled words:"].config(text=str(misspellings))
+        self.stats_labels["Corrections applied:"].config(text=str(misspellings))
+        self.stats_labels["Text quality:"].config(text=f"{text_quality:.1f}%")
+        self.stats_labels["Last corrected:"].config(text=datetime.now().strftime("%H:%M:%S"))
         
         color = "#27ae60" if text_quality >= 90 else ("#f39c12" if text_quality >= 70 else "#e74c3c")
-        self.stats_labels["📈 Text quality:"].config(fg=color)
+        self.stats_labels["Text quality:"].config(fg=color)
     
     def display_suggestions(self, suggestions_dict):
         self.suggestions_listbox.delete(0, tk.END)
@@ -200,22 +297,23 @@ class AutocorrectApp:
         
         corrected, corrections, suggestions = self.engine.correct_sentence(original)
         
-        misspelled_count = len([w for w in original.split() if w.lower().strip(".,!?;:\"'()") not in self.engine.spell])
-        self.update_statistics(len(original.split()), misspelled_count)
+        original_words = [w.lower().strip(".,!?;:\"'()") for w in original.split() if w.strip(".,!?;:\"'()")]
+        misspelled_count = len([w for w in original_words if w not in self.engine.spell])
+        self.update_statistics(len(original_words), misspelled_count)
         
         self.output_text.delete("1.0", tk.END)
         self.output_text.insert("1.0", corrected)
         
         if corrections:
-            self.output_text.insert(tk.END, "\n\n" + "─" * 50 + "\n📝 Corrections made:\n")
+            self.output_text.insert(tk.END, "\n\n" + "-" * 50 + "\nCorrections made:\n")
             for c in corrections:
-                self.output_text.insert(tk.END, f"  • {c}\n")
-            self.status_bar.config(text=f"✓ Corrected {len(corrections)} word(s)", fg="#27ae60")
+                self.output_text.insert(tk.END, f"  - {c}\n")
+            self.status_bar.config(text=f"Corrected {len(corrections)} word(s)", fg="#27ae60")
             self.display_suggestions(suggestions)
         else:
             if misspelled_count == 0:
-                self.output_text.insert(tk.END, "\n\n✅ No misspellings found!")
-                self.status_bar.config(text="✓ No corrections needed", fg="#27ae60")
+                self.output_text.insert(tk.END, "\n\nNo misspellings found!")
+                self.status_bar.config(text="No corrections needed", fg="#27ae60")
             self.suggestions_listbox.delete(0, tk.END)
     
     def replace_selected_word(self, event):
@@ -232,9 +330,10 @@ class AutocorrectApp:
             new_content = re.sub(pattern, suggestion, content, count=1, flags=re.IGNORECASE)
             self.input_text.delete("1.0", tk.END)
             self.input_text.insert("1.0", new_content)
-            self.status_bar.config(text=f"✓ Replaced '{misspelled}' with '{suggestion}'", fg="#27ae60")
+            self.status_bar.config(text=f"Replaced '{misspelled}' with '{suggestion}'", fg="#27ae60")
             self.root.after(2000, lambda: self.status_bar.config(text="Ready", fg="#7f8c8d"))
             self.correct()
+            self.on_text_change()
     
     def clear(self):
         self.input_text.delete("1.0", tk.END)
@@ -242,12 +341,20 @@ class AutocorrectApp:
         self.suggestions_listbox.delete(0, tk.END)
         self.status_bar.config(text="Cleared", fg="#7f8c8d")
         
-        self.stats_labels["📝 Total words:"].config(text="0")
-        self.stats_labels["❌ Misspelled words:"].config(text="0")
-        self.stats_labels["✅ Corrections applied:"].config(text="0")
-        self.stats_labels["📈 Text quality:"].config(text="0%")
-        self.stats_labels["⏱ Last corrected:"].config(text="Never")
-        self.stats_labels["📈 Text quality:"].config(fg="#2c3e50")
+        self.stats_labels["Total words:"].config(text="0")
+        self.stats_labels["Misspelled words:"].config(text="0")
+        self.stats_labels["Corrections applied:"].config(text="0")
+        self.stats_labels["Text quality:"].config(text="0%")
+        self.stats_labels["Last corrected:"].config(text="Never")
+        self.stats_labels["Text quality:"].config(fg="#2c3e50")
+        
+        for btn in self.prediction_buttons:
+            btn.config(
+                text="",
+                bg="#ecf0f1",
+                fg="#95a5a6",
+                state=tk.DISABLED
+            )
         
         self.root.after(1000, lambda: self.status_bar.config(text="Ready", fg="#7f8c8d"))
     
@@ -256,7 +363,7 @@ class AutocorrectApp:
         if output:
             self.root.clipboard_clear()
             self.root.clipboard_append(output)
-            self.status_bar.config(text="✓ Copied to clipboard!", fg="#27ae60")
+            self.status_bar.config(text="Copied to clipboard!", fg="#27ae60")
             self.root.after(2000, lambda: self.status_bar.config(text="Ready", fg="#7f8c8d"))
         else:
             messagebox.showinfo("Nothing to copy", "No output to copy.")
