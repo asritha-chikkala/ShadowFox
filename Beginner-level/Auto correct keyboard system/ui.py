@@ -16,6 +16,7 @@ class AutocorrectApp:
         self.custom_font = font.Font(family="Segoe UI", size=11)
         self.engine = AutocorrectEngine()
         self.predictor = NextWordPredictor()
+        self.model_metrics = {}
 
         self.suggestion_map = {}
         self.current_predictions = []
@@ -23,6 +24,7 @@ class AutocorrectApp:
 
         self.setup_ui()
         self.setup_bindings()
+        self.load_model_metrics()
 
     def setup_ui(self):
         title_frame = tk.Frame(self.root, bg="#2c3e50", height=60)
@@ -145,6 +147,9 @@ class AutocorrectApp:
             ("Corrections applied:", "0"),
             ("Text quality:", "100%"),
             ("Last corrected:", "Never"),
+            ("Top-1 Accuracy:", "--"),
+            ("Top-5 Accuracy:", "--"),
+            ("Latency:", "--"),
         ]:
             row = tk.Frame(stats_display, bg="#ecf0f1")
             row.pack(fill=tk.X, pady=3)
@@ -185,6 +190,45 @@ class AutocorrectApp:
         self.input_text.bind("<KeyRelease>", self._schedule_prediction)
         self.root.bind("<Control-r>", lambda e: self.correct())
         self.root.bind("<Control-l>", lambda e: self.clear())
+
+    def load_model_metrics(self):
+        test_sentences = [
+            "the weather is nice today",
+            "machine learning is very useful",
+            "artificial intelligence is transforming industries",
+            "thank you for your support",
+            "i would like to learn python programming",
+            "next word prediction improves typing speed",
+            "natural language processing is fascinating",
+            "the quick brown fox jumps over the lazy dog"
+        ]
+
+        top1, top5 = self.predictor.evaluate_accuracy(test_sentences)
+
+        latency = self.predictor.benchmark_latency()
+
+        self.stats_labels["Top-1 Accuracy:"].config(
+            text=f"{top1:.1f}%"
+        )
+
+        self.stats_labels["Top-5 Accuracy:"].config(
+            text=f"{top5:.1f}%"
+        )
+
+        self.stats_labels["Latency:"].config(
+            text=f"{latency:.2f} ms"
+        )
+
+        print("\n========== MODEL METRICS ==========")
+
+        stats = self.predictor.get_statistics()
+
+        for key, value in stats.items():
+            print(f"{key}: {value:,}")
+
+        print(f"Top-1 Accuracy: {top1:.2f}%")
+        print(f"Top-5 Accuracy: {top5:.2f}%")
+        print(f"Average Latency: {latency:.3f} ms")
 
     def _schedule_prediction(self, event=None):
         if self._predict_after_id is not None:
